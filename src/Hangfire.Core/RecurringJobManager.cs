@@ -107,7 +107,7 @@ namespace Hangfire
             }
         }
 
-        public void Trigger([NotNull] string recurringJobId)
+        public BackgroundJob Trigger([NotNull] string recurringJobId)
         {
             if (recurringJobId == null) throw new ArgumentNullException("recurringJobId");
 
@@ -116,7 +116,7 @@ namespace Hangfire
                 var hash = connection.GetAllEntriesFromHash(String.Format("recurring-job:{0}", recurringJobId));
                 if (hash == null)
                 {
-                    return;
+                    return null;
                 }
                 
                 var job = JobHelper.FromJson<InvocationData>(hash["Job"]).Deserialize();
@@ -127,7 +127,7 @@ namespace Hangfire
                     state.Queue = hash["Queue"];
                 }
 
-                _factory.Create(new CreateContext(_storage, connection, job, state));
+                return _factory.Create(new CreateContext(_storage, connection, job, state));
             }
         }
 
