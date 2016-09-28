@@ -45,11 +45,11 @@ namespace Hangfire.SqlServer
             string jobId, 
             string queue)
         {
-            if (storage == null) throw new ArgumentNullException("storage");
-            if (connection == null) throw new ArgumentNullException("connection");
-            if (transaction == null) throw new ArgumentNullException("transaction");
-            if (jobId == null) throw new ArgumentNullException("jobId");
-            if (queue == null) throw new ArgumentNullException("queue");
+            if (storage == null) throw new ArgumentNullException(nameof(storage));
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
+            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
+            if (jobId == null) throw new ArgumentNullException(nameof(jobId));
+            if (queue == null) throw new ArgumentNullException(nameof(queue));
 
             _storage = storage;
             _connection = connection;
@@ -60,21 +60,27 @@ namespace Hangfire.SqlServer
 
             if (!_storage.IsExistingConnection(_connection))
             {
-                _timer = new Timer(ExecuteKeepAliveQuery, null, TimeSpan.Zero, KeepAliveInterval);
+                _timer = new Timer(ExecuteKeepAliveQuery, null, KeepAliveInterval, KeepAliveInterval);
             }
         }
 
-        public string JobId { get; private set; }
-        public string Queue { get; private set; }
+        public string JobId { get; }
+        public string Queue { get; }
 
         public void RemoveFromQueue()
         {
-            _transaction.Commit();
+            lock (_lockObject)
+            {
+                _transaction.Commit();
+            }
         }
 
         public void Requeue()
         {
-            _transaction.Rollback();
+            lock (_lockObject)
+            {
+                _transaction.Rollback();
+            }
         }
 
         public void Dispose()
